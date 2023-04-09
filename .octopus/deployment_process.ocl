@@ -1,0 +1,80 @@
+step "deploy-hello-friss" {
+    name = "Deploy hello friss"
+    properties = {
+        Octopus.Action.MaxParallelism = "1"
+        Octopus.Action.TargetRoles = "ec2-1,t-ec2-1,s-ec2-1"
+    }
+
+    action "remove-from-load-balancer-clone-1" {
+        action_type = "Octopus.Script"
+        environments = ["staging", "production"]
+        is_disabled = true
+        name = "remove from load balancer - clone (1)"
+        properties = {
+            Octopus.Action.RunOnServer = "false"
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                $machineName = $OctopusParameters["Octopus.Machine.Name"]
+                
+                Write-Host "Remove $machineName from the firewall."
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool_variable = ""
+    }
+
+    action "deploy-hello-friss" {
+        action_type = "Octopus.TentaclePackage"
+        name = "Deploy hello friss"
+        properties = {
+            Octopus.Action.EnabledFeatures = ",Octopus.Features.ConfigurationTransforms,Octopus.Features.ConfigurationVariables"
+            Octopus.Action.Package.AutomaticallyRunConfigurationTransformationFiles = "False"
+            Octopus.Action.Package.AutomaticallyUpdateAppSettingsAndConnectionStrings = "False"
+            Octopus.Action.Package.DownloadOnTentacle = "False"
+            Octopus.Action.Package.FeedId = "octopus-server-built-in"
+            Octopus.Action.Package.PackageId = "hello-world"
+        }
+        worker_pool_variable = ""
+
+        packages {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "hello-world"
+            properties = {
+                SelectionMode = "immediate"
+            }
+        }
+    }
+
+    action "addto-load-balancer" {
+        action_type = "Octopus.Script"
+        environments = ["staging", "production"]
+        is_disabled = true
+        name = "addto load balancer"
+        properties = {
+            Octopus.Action.RunOnServer = "false"
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                $machineName = $OctopusParameters["Octopus.Machine.Name"]
+                
+                Write-Host "adding $machineName to the load balancer."
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool_variable = ""
+    }
+}
+
+step "notify-developer" {
+    condition = "Always"
+    name = "notify developer"
+
+    action {
+        action_type = "Octopus.Email"
+        is_disabled = true
+        properties = {
+            Octopus.Action.Email.Subject = "done building"
+            Octopus.Action.Email.ToTeamIds = "friss-notifications"
+        }
+    }
+}
