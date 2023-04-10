@@ -32,14 +32,14 @@ step "deploy-hello-friss" {
             Octopus.Action.Package.AutomaticallyUpdateAppSettingsAndConnectionStrings = "False"
             Octopus.Action.Package.DownloadOnTentacle = "False"
             Octopus.Action.Package.FeedId = "octopus-server-built-in"
-            Octopus.Action.Package.PackageId = "hello-world"
+            Octopus.Action.Package.PackageId = "apache-maven-3"
         }
         worker_pool_variable = ""
 
         packages {
             acquisition_location = "Server"
             feed = "octopus-server-built-in"
-            package_id = "hello-world"
+            package_id = "apache-maven-3"
             properties = {
                 SelectionMode = "immediate"
             }
